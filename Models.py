@@ -12,8 +12,9 @@ class Models(object):
             self.mnist_2nn_construct(inputs)
         elif self.model_name == 'mnist_cnn':
             self.mnist_cnn_construct(inputs)
-        else:
-            pass
+        elif self.model_name == 'cifar10_cnn':
+            self.cifar10_cnn_construct(inputs)
+
 
     def mnist_2nn_construct(self, inputs):
         self.fc1 = self.full_connect(inputs, 784, 200, 'h1')
@@ -23,13 +24,25 @@ class Models(object):
     def mnist_cnn_construct(self, inputs):
         self.trans_inputs  = tf.reshape(inputs, [-1, 28, 28, 1])
         self.cov1 = self.convolve(self.trans_inputs, 1, 5, 1, 1, 32, 'cov1', True, 'SAME')
-        self.pool1 = self.max_pool_2x2(self.cov1, 'pool1')
+        self.pool1 = self.max_pool_nxn(self.cov1, 2, 2, 'pool1')
         self.cov2 = self.convolve(self.pool1, 32, 5, 1, 1, 64, 'cov2', True, 'SAME')
-        self.pool2 = self.max_pool_2x2(self.cov2, 'pool2')
+        self.pool2 = self.max_pool_nxn(self.cov2, 2, 2, 'pool2')
         with tf.variable_scope('transform') as scope:
             self.trans_pool2 = tf.reshape(self.pool2, [-1, 7 * 7 * 64])
         self.fc1 = self.full_connect(self.trans_pool2, 7 * 7 * 64, 512, 'fc1')
         self.outputs = self.full_connect(self.fc1, 512, 10, 'last_layer', relu=False)
+
+    def cifar10_cnn_construct(self, inputs):
+        self.cov1 = self.convolve(inputs, 3, 5, 1, 1, 64, 'cov1', True, 'SAME')
+        self.pool1 = self.max_pool_nxn(self.cov1, 3, 2, 'pool1')
+        self.cov2 = self.convolve(self.pool1, 64, 5, 1, 1, 64, 'cov2', True, 'SAME')
+        self.pool2 = self.max_pool_nxn(self.cov2, 3, 2, 'pool2')
+        with tf.variable_scope('transform') as scope:
+            self.trans_pool2 = tf.reshape(self.pool2, [-1, 6 * 6 * 64])
+        self.fc1 = self.full_connect(self.trans_pool2, 6 * 6 * 64, 384, 'fc1')
+        self.fc2 = self.full_connect(self.fc1, 384, 192, 'fc2')
+        self.outputs = self.full_connect(self.fc2, 192, 10, 'last_layer', relu=False)
+
 
     def full_connect(self, inputs, num_in, num_out, name, relu=True):
         with tf.variable_scope(name) as scope:
@@ -42,6 +55,7 @@ class Models(object):
                 return outputs
             else:
                 return ws_plus_bs
+
 
     def convolve(self, inputs, inputs_channels, kernel_size, stride_y, stride_x, num_features, name, relu=True, padding='SAME'):
         with tf.variable_scope(name) as scope:
@@ -57,9 +71,10 @@ class Models(object):
             else:
                 return cov_puls_bs
 
-    def max_pool_2x2(self, inputs, name):
+
+    def max_pool_nxn(self, inputs, ksize, ssize, name):
         with tf.variable_scope(name) as scope:
-            return tf.nn.max_pool(inputs, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+            return tf.nn.max_pool(inputs, ksize=[1, ksize, ksize, 1], strides=[1, ssize, ssize, 1], padding='SAME')
 
 
 

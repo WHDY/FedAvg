@@ -2,6 +2,8 @@ import numpy as np
 import tensorflow as tf
 import gzip
 import os
+import platform
+import pickle
 
 
 class DataSet(object):
@@ -22,6 +24,10 @@ class DataSet(object):
 
         if self.name == 'mnist':
             self.mnist_dataset_construct(is_IID, dtype)
+        elif self.name == 'cifar10':
+            self.cifar10_dataset_construct(is_IID)
+        else:
+            pass
 
 
     def mnist_dataset_construct(self, is_IID, dtype):
@@ -65,6 +71,69 @@ class DataSet(object):
 
         self.test_data = test_images
         self.test_label = test_labels
+
+
+    def cifar10_dataset_construct(self, is_IID):
+        images, labels = [], []
+        for filename in ['./data/CIFAR-10/cifar-10-batches-py/data_batch_{}'.format(i) for i in range(1, 6)]:
+            with open(filename, 'rb') as fo:
+                if 'Windows' in platform.platform():
+                    cifar10 = pickle.load(fo, encoding='bytes')
+                elif 'Linux' in platform.platform():
+                    cifar10 = pickle.load(fo, encoding='bytes')
+            for i in range(len(cifar10[b'labels'])):
+                image = np.reshape(cifar10[b'data'][i], (3, 32, 32))
+                image = np.transpose(image, (1, 2, 0))
+                image = image.astype(float)
+                images.append(image)
+            labels += cifar10[b'labels']
+        images = np.array(images, dtype='float')
+        labels = np.array(labels, dtype='int')
+        # self.train_data, self.train_label = images, labels
+        if is_IID == 1:
+            order = np.arange(images.shape[0])
+            np.random.shuffle(order)
+            self.train_data = images[order]
+            self.train_label = dense_to_one_hot(labels[order])
+        else:
+            order = np.argsort(labels)
+            self.train_data = images[order]
+            self.train_label = dense_to_one_hot(labels[order])
+
+        images, labels = [], []
+        with open(r'./data//CIFAR-10/cifar-10-batches-py/test_batch', 'rb') as fo:
+            if 'Windows' in platform.platform():
+                cifar10 = pickle.load(fo, encoding='bytes')
+            elif 'Linux' in platform.platform():
+                cifar10 = pickle.load(fo, encoding='bytes')
+        for i in range(len(cifar10[b'labels'])):
+            image = np.reshape(cifar10[b'data'][i], (3, 32, 32))
+            image = np.transpose(image, (1, 2, 0))
+            image = image.astype(float)
+            images.append(image)
+        labels += cifar10[b'labels']
+        images = np.array(images, dtype='float')
+        labels = np.array(labels, dtype='int')
+        self.test_label = dense_to_one_hot(labels)
+        self.test_data = []
+        shape = (24, 24, 3)
+        for i in range(images.shape[0]):
+            old_image = images[i, :, :, :]
+            old_image = np.pad(old_image, [[4, 4], [4, 4], [0, 0]], 'constant')
+            left = int((old_image.shape[0] - shape[0]) / 2)
+            top = int((old_image.shape[1] - shape[1]) / 2)
+            old_image = old_image[left: left + shape[0], top: top + shape[1], :]
+
+            mean = np.mean(old_image)
+            std = np.max([np.std(old_image),
+                          1.0 / np.sqrt(images.shape[1] * images.shape[2] * images.shape[3])])
+            new_image = (old_image - mean) / std
+
+            self.test_data.append(new_image)
+
+        self.test_data = np.array(self.test_data, dtype='float')
+        self.train_data_size = self.train_data.shape[0]
+        self.test_data_size = self.test_data.shape[0]
 
 
     def next_batch(self, batch_size):

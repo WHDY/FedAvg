@@ -36,26 +36,32 @@ if __name__=='__main__':
 
     test_mkdir(args.save_path)
 
-    if args.modelname == 'mnist_2nn' or 'mnist_cnn':
+    if args.modelname == 'mnist_2nn' or args.modelname == 'mnist_cnn':
         datasetname = 'mnist'
         with tf.variable_scope('inputs') as scope:
             inputsx = tf.placeholder(tf.float32, [None, 784])
             inputsy = tf.placeholder(tf.float32, [None, 10])
-        myModel = Models(args.modelname, inputsx)
+    elif args.modelname == 'cifar10_cnn':
+        datasetname = 'cifar10'
+        with tf.variable_scope('inputs') as scope:
+            inputsx = tf.placeholder(tf.float32, [None, 24, 24, 3])
+            inputsy = tf.placeholder(tf.float32, [None, 10])
 
-        predict_label = tf.nn.softmax(myModel.outputs)
-        with tf.variable_scope('loss') as scope:
-            Cross_entropy = -tf.reduce_mean(inputsy * tf.log(predict_label), axis=1)
+    myModel = Models(args.modelname, inputsx)
 
-        with tf.variable_scope('train') as scope:
-            optimizer = tf.train.GradientDescentOptimizer(args.learning_rate)
-            train = optimizer.minimize(Cross_entropy)
+    predict_label = tf.nn.softmax(myModel.outputs)
+    with tf.variable_scope('loss') as scope:
+        Cross_entropy = -tf.reduce_mean(inputsy * tf.log(predict_label), axis=1)
 
-        with tf.variable_scope('validation') as scope:
-            correct_prediction = tf.equal(tf.argmax(predict_label, axis=1), tf.argmax(inputsy, axis=1))
-            accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))
+    with tf.variable_scope('train') as scope:
+        optimizer = tf.train.GradientDescentOptimizer(args.learning_rate)
+        train = optimizer.minimize(Cross_entropy)
 
-        saver = tf.train.Saver(max_to_keep=3)
+    with tf.variable_scope('validation') as scope:
+        correct_prediction = tf.equal(tf.argmax(predict_label, axis=1), tf.argmax(inputsy, axis=1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))
+
+    saver = tf.train.Saver(max_to_keep=3)
 
     # ---------------------------------------- train --------------------------------------------- #
     with tf.Session(config=tf.ConfigProto(
