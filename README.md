@@ -1,20 +1,20 @@
-## FedAvg
+# FedAvg
 
 The implementation of federated average learning[1]  based on TensorFlow.
 
 Some codes refers to https://github.com/Zing22/tf-fed-demo， https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/g3doc/tutorials/mnist/input_data.py and  https://github.com/persistforever/cifar10-tensorflow/blob/master/src/dataloader/cifar10.py
 
-#### environment
+### environment
 
 1.python3.7.6
 
 2.tensorflow1.13.1
 
-#### prepare data sets
+### prepare data sets
 
 You are supposed to prepare the data set by yourself. MNIST can be downloaded on http://yann.lecun.com/exdb/mnist/, and CIFAR-10 can be downloaded on http://www.cs.toronto.edu/~kriz/cifar.html. These data sets should be put into /data/MNIST and /data/CIFAR-10 when the download is finished.
 
-#### usage
+### usage
 
 Run the code
 
