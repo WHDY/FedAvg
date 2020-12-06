@@ -57,7 +57,11 @@ if __name__=="__main__":
     testDataLoader = myClients.test_data_loader
 
     num_in_comm = int(max(args['num_of_clients'] * args['cfraction'], 1))
-    global_parameters = net.state_dict()
+
+    global_parameters = {}
+    for key, var in net.state_dict().items():
+        global_parameters[key] = var.clone()
+
     for i in range(args['num_comm']):
         print("communicate round {}".format(i+1))
 
@@ -69,7 +73,9 @@ if __name__=="__main__":
             local_parameters = myClients.clients_set[client].localUpdate(args['epoch'], args['batchsize'], net,
                                                                          loss_func, opti, global_parameters)
             if sum_parameters is None:
-                sum_parameters = local_parameters
+                sum_parameters = {}
+                for key, var in local_parameters.items():
+                    sum_parameters[key] = var.clone()
             else:
                 for var in sum_parameters:
                     sum_parameters[var] = sum_parameters[var] + local_parameters[var]
